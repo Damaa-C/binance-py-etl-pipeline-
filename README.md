@@ -9,11 +9,13 @@ To ensure the code is scalable and maintainable, the logic is split into functio
 
 - `extract_api()`:
 
-Functions as the "Sensor."
+- Functions as the "Sensor."
 
-Connects to the Binance exchange info endpoint.
+- Connects to the Binance exchange info endpoint.
 
-Uses Environment Variables (.env) to securely handle API keys.
+- Uses Environment Variables (.env) to securely handle API keys.
+  
+[extract.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/extract.py)
 
 - `transform_symbols_dict()`:
 
@@ -23,6 +25,8 @@ Flattens nested JSON into a structured Pandas DataFrame.
 
 Implements logic to convert boolean trading flags into human-readable "Yes/No" formats.
 
+[transform.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/transform.py)
+
 - `load_to_postgres()`:
 
 Functions as the "Storage Engine."
@@ -31,9 +35,13 @@ Connects to Aiven PostgreSQL using SSL encryption.
 
 Uses Upsert (ON CONFLICT) logic to ensure the pipeline is Idempotent (re-runnable without duplicating data).
 
+[load.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/load.py) 
+
 - `main_etl.py`:
 
 The Compiler. It coordinates the flow of data between the three modules.
+
+[main.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/main.py) 
 
 ##  Testing & Validation: test.ipynb
 Before moving to a production-ready script, the pipeline was rigorously tested in a Jupyter Notebook ([test.ipynb](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/test.ipynb)).
