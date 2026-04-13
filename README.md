@@ -36,7 +36,7 @@ Uses Upsert (ON CONFLICT) logic to ensure the pipeline is Idempotent (re-runnabl
 The Compiler. It coordinates the flow of data between the three modules.
 
 ##  Testing & Validation: test.ipynb
-Before moving to a production-ready script, the pipeline was rigorously tested in a Jupyter Notebook (test.ipynb).
+Before moving to a production-ready script, the pipeline was rigorously tested in a Jupyter Notebook ([test.ipynb](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/test.ipynb)).
 
 Why? Notebooks allow for cell-by-cell execution, which was essential for:
 
