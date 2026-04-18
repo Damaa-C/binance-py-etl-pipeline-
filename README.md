@@ -1,91 +1,68 @@
-#  Binance-to-Aiven Cloud ETL Pipeline
-##  Introduction
-This project is a Modular ETL (Extract, Transform, Load) system designed to synchronize real-time financial metadata from the Binance API to a cloud-hosted PostgreSQL database.
+# Binance to Aiven PostgreSQL ETL Pipeline
+### Data Engineering Project 
 
-The goal of this pipeline is to turn volatile API responses into a persistent, queryable data asset. This is a foundational project for building crypto-analytics dashboards or trading signal monitors.
+## 1. Project Overview
+This project demonstrates an automated **ETL (Extract, Transform, Load)** pipeline. It fetches real-time market data from the Binance API, processes it for analytical readiness using Python, and stores it in a managed PostgreSQL database on the Aiven Cloud.
 
-##  Project Architecture: Why Modularity Matters
-To ensure the code is scalable and maintainable, the logic is split into functional components:
+---
 
-- `extract_api()`:
+## 2. Testing & Environment Strategy
 
-- Functions as the "Sensor."
+### **Jupyter Notebook (The Testing Sandbox)**
+Before script finalization, **Jupyter Notebooks** were used to prototype and validate the pipeline logic cell-by-cell.
+> ![deploy.ipynb](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/test.ipynb)
 
-- Connects to the Binance exchange info endpoint.
+* **Data Profiling:** Used `df.shape` and `df.dtypes` to ensure the 1,400+ rows were structured correctly.
+* **Logic Validation:** Verified filtering and timestamp conversion visually.
 
-- Uses Environment Variables (.env) to securely handle API keys.
-  
-[extract.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/extract.py)
+### **Python Virtual Environment (The Production Core)**
+* **Isolation:** Managed via `venv` to ensure dependency stability.
+* **Secret Management:** Utilized `python-dotenv` for `.env` file security.
+> ![pipeline.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/pipeline.png)
 
-- `transform_symbols_dict()`:
+---
 
-Functions as the "Processor."
+## 3. The ETL Architecture
 
-Flattens nested JSON into a structured Pandas DataFrame.
+### **Extract**
+* **Source:** Binance 24-hour Ticker API.
+* **Code:** [extract.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/extract.py)
 
-Implements logic to convert boolean trading flags into human-readable "Yes/No" formats.
+### **Transform**
+* **Cleaning:** Filtered for `USDT` trading pairs and converted numeric types via Pandas.
+* **Code:** [transform.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/transform.py)
 
-[transform.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/transform.py)
+### **Load**
+* **Destination:** Aiven Cloud PostgreSQL.
+* **Strategy:** Uses `if_exists='append'` for time-series history.
+* **Code:** [load.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/load.py)
 
-- `load_to_postgres()`:
+---
 
-Functions as the "Storage Engine."
+## 4. Automation with Apache Airflow
+The pipeline is scheduled as a **Directed Acyclic Graph (DAG)** to run every hour.
 
-Connects to Aiven PostgreSQL using SSL encryption.
+[Airflow DAG ](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/airflow.py)
 
-Uses Upsert (ON CONFLICT) logic to ensure the pipeline is Idempotent (re-runnable without duplicating data).
+* **DAG ID:** `damaa_binance_etl_pipeline`
+* **Task:** Single-task `PythonOperator` for simplified monitoring and logging.
 
-[load.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/load.py) 
+---
 
-- `main_etl.py`:
+## 5. Data Success Overview
+Verified data structure in Aiven PostgreSQL:
 
-The Compiler. It coordinates the flow of data between the three modules.
+| symbol | priceChange | lastPrice | volume | openTime |
+| :--- | :--- | :--- | :--- | :--- |
+| BTCUSDT | -540.20 | 64310.50 | 12450.00 | 2026-04-18 20:00:00 |
 
-[main.py](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/main.py) 
+This shows total rows loaded to postgres.
+` SELECT COUNT(*) FROM binance_tickers;`
+> ![total rows](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/rows%20loaded%20to%20sql.png)
 
-##  Testing & Validation: test.ipynb
-Before moving to a production-ready script, the pipeline was rigorously tested in a Jupyter Notebook ([test.ipynb](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/test.ipynb)).
+This shows that data has been loaded to our database; postgres.
+` SELECT * FROM binance_tickers;`
+> ![Database result](https://github.com/Damaa-C/binance-py-etl-pipeline-/blob/main/data%20overview%20in%20sql.png)
 
-Why? Notebooks allow for cell-by-cell execution, which was essential for:
-
-- Verifying that the 3,500+ rows of data didn't exceed the  limits of the development.
-
-- Inspecting the DataFrame head to ensure column mapping was accurate.
-
-- Debugging SQL constraints (like the VARCHAR limit error) in a sandbox environment.
-
-## Execution Output & Debugging
-The following output demonstrates a successful run of the pipeline, including how the system handles real-world data constraints:
-
-Plaintext
- [1/3] Fetching data from API...
- [2/3] Transforming JSON to structured DataFrame...
- [3/3] Loading 3559 rows to Aiven Cloud...
-
-# --- Preview of Processed Data ---
-   ```
-symbol base_asset quote_asset   status spot_ready margin_ready
-0  ETHBTC        ETH         BTC  TRADING        Yes          Yes
-1  LTCBTC        LTC         BTC  TRADING        Yes          Yes
-2  BNBBTC        BNB         BTC  TRADING        Yes          Yes
-3  NEOBTC        NEO         BTC  TRADING        Yes           No
-4 QTUMETH       QTUM         ETH    BREAK        Yes           No
-```
-✅ Success: 3559 rows synchronized with Aiven PostgreSQL.
-Note on Innovation: During the first run, the pipeline identified a value too long for type character varying(10) error. This was a critical learning moment—I refactored the database schema to VARCHAR(20) to handle longer token names, ensuring the pipeline is resilient to future API changes.
-
-##  Security & Configuration
-To maintain professional security standards:
-
-`.env` File: All sensitive credentials (DB passwords, API keys) are stored in a local .env file.
-
-`.gitignore`: This file is explicitly ignored by Git to prevent accidental leakage of cloud credentials to public repositories.
-
-`OS Library`: Used os.getenv to pull secrets into the runtime environment securely.
-
-## How to Run
-`Clone` the repo.
-
-Create a `.env` file with your Aiven and Binance credentials.
-
-Run python `main_etl.py`.
+---
+*Developed as part of Data Engineering Training - 2026*
