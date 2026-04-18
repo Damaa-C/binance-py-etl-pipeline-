@@ -1,29 +1,33 @@
 import pandas as pd
-import requests
-import os
+from extract import binance_data
+from datetime import datetime
 
-def transform_symbols_dict(data):
-    symbol_dict = data.get('symbols', [])
+def transform_binance():
 
-    transformed_data = []
+    df = pd.DataFrame(binance_data)
 
-    for sym in symbol_dict :
-        cleaned_symbol = {
-            'Symbol'       : sym.get('symbol'),
-            'Base_Asset'   : sym.get('baseAsset'),
-            'Quote_Asset'  : sym.get('quoteAsset'),
-            'Status'       : sym.get('status'),
-            'Spot_Ready'   : "Yes" if sym.get('isSpotTradingAllowed') else "No",
-            'Margin_Ready' : "Yes" if sym.get('isMarginTradingAllowed') else "No"
-        }
+    cols_to_keep = [
+        'symbol', 'priceChange', 'priceChangePercent', 
+        'lastPrice', 'volume', 'quoteVolume', 'openTime'
+    ]
 
-    transformed_data.append(cleaned_symbol)
-    df = pd.DataFrame(transformed_data)
+    df = df[cols_to_keep]
+
+    numeric_cols = ['priceChange', 'priceChangePercent', 'lastPrice', 'volume', 'quoteVolume']
+
+    for col in numeric_cols:
+
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    df['openTime'] = pd.to_datetime(df['openTime'], unit='ms')
+
     return df
 
-result_df = transform_symbols_dict(result)
+clean_df = transform_binance()
 
-print(result_df.head())
+print(clean_df.head())
+
+
 
 
 

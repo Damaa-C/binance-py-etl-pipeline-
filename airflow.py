@@ -1,11 +1,9 @@
-# run pipeline
-
-from extract import extract_binance
-from transform import transform_binance
-from load import load_to_postgres
-import pandas as pd
-import requests
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
 import os
+import requests
+import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
@@ -79,12 +77,19 @@ def run_binance_pipeline():
     
     except Exception as e:
         print(f" Pipeline failed! Error: {e}")
-        return False
+        raise
+
+
+with DAG (
+    dag_id     = "damaa_binance_etl_pipeline",
+    start_date = datetime (2026,1,1),
+    scheduler  = timedelta(hours=1),
+    catchup    = False
+) as dag:
+    
+    run_binance_pipeline_task = PythonOperator(
+        task_id = "execute binance etl",
+        pythoncallable = run_binance_pipeline
+    )
     
   
-
-# --- RUN THE ETL ---
-if __name__ == "__main__":
-    run_binance_pipeline()
-
-   

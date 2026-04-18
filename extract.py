@@ -1,16 +1,17 @@
-import requests
-import os
-import pandas as pd
+import requests 
 
-def extract_api():
-    url = f"https://binance43.p.rapidapi.com/exchangeInfo?symbol=ETHBTC"
 
-    headers = {
-        "x-rapidapi-host": os.getenv("API_HOST"),
-        "x-rapidapi-key" : os.getenv("API_KEY")
+def extract_binance():
+
+    url = f"https://api.binance.com/api/v3/ticker/24hr"
+
+    params = {
+        'symbolStatus': 'TRADING',
+        'type': 'FULL'
     }
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url,params=params)
+
 
     response.raise_for_status()
 
@@ -18,9 +19,9 @@ def extract_api():
 
     return data
 
-result = extract_api()
+binance_data = extract_binance()
 
-print(result, [])
+print(binance_data,[])
 
 
 
